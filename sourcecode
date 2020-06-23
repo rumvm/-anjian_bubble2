@@ -1,0 +1,1165 @@
+Dim intX,intY,intX2,intY2,intX3,intY3,intX4,intY4
+Dim giftboxcnt ,whilerrorcnt,MAXerrorcn,requestcountdown,requestF,mysF,myserrorF
+whilerrorcnt = 0
+MAXerrorcn = 100 
+requestcountdown = 500
+requestF=0
+mysF = 0
+myserrorF = 0
+
+Dim ff,givefirecnt,gvf_counterMax,givefireF,rqf_counterMax,closemysrank_F,pastStg_F
+ff=1 //search forword flag ,1: to top, 2:to bottom 0:not forword
+givefirecnt=0 // if value is big mean long time not give fire
+gvf_counterMax = Cint(ReadUIConfig("gvfwaitingtime")) 
+rqf_counterMax = Cint(ReadUIConfig("rqfwaitingtime"))
+givefireF=0 // 0:disabble 1:enable 
+closemysrank_F = 0
+
+
+pastStg_F = ReadUIConfig("SelStage")
+
+Dim stagePosOffset
+
+Select Case pastStg_F
+	Case 1
+	stagePosOffset = 330
+	Case 2
+	stagePosOffset = 660
+	Case Else
+	stagePosOffset = 0	
+End Select
+
+
+///////////////////////恅趼望舑//////////////////////////////////
+SetRowsNumber(0)
+//蛁砩ㄩ藩棒秶釬俇趼踱綴ㄛ剒猁赻俴參秶釬腔趼踱恅璃氝樓善褐掛※蜇璃§笢
+SetDictEx(0, "Attachment:requestID.txt")
+UseDict(0)
+//眕奻謗曆褐掛硐剒猁覃蚚珨棒
+///////////////////////////////////////////////////////////////
+
+Thread.SetShareVar "Funname", "None"
+Thread.SetShareVar "Whilecnt", 0
+Thread.SetShareVar "MAXWhilecnt", 0
+Thread.SetShareVar "FunMsg", "None"
+Thread.SetShareVar "RQcd", 500
+Thread.Start (watchdog)
+
+RunApp "com.linecorp.LGBB2"
+
+
+Sub watchdog
+
+    //If ReadUIConfig("Factorymode") = True Then 
+
+    Dim msgold,msgnew,MAXerrorcnt,errorcnt
+
+    msgold = ""
+    msgnew = ""
+    MAXerrorcnt = Cint(ReadUIConfig("waitingtime"))	
+    errorcnt=0	
+    
+    While 1
+	
+        //	if long time no action -> Restartgame	
+        msgnew = Thread.getShareVar("Funname")
+        If msgold = msgnew Then 
+            errorcnt=errorcnt+1
+        Else 
+            msgold = msgnew
+            errorcnt=0
+        End If
+	    
+        //墿嶲黺議,絿笭嶱 but 緻軑猁鳶栭瞰俋
+        If errorcnt >= MAXerrorcnt And _
+        	Thread.getShareVar("Funname")<> "giftboxhandle" And _
+	    	Thread.getShareVar("Funname")<> "gv_fireboxhandle" And _
+	    	Thread.getShareVar("Funname")<>"rq_fireboxhandle" Then 
+	    
+            KillApp "com.linecorp.LGBB2"
+            Delay 5000
+            RunApp "com.linecorp.LGBB2"
+						
+            msgold =""
+            msgnew = ""
+            errorcnt = 0
+				
+        End If
+	     
+        
+        ShowMessage "Funname = " & Thread.getShareVar("Funname")&Chr(10)& _
+					"Whilecnt = " & Thread.getShareVar("Whilecnt")& " MAX: " & Thread.getShareVar("MAXWhilecnt") &Chr(10)& _
+					"FunMsg = " & Thread.getShareVar("FunMsg")&Chr(10)& _
+					"RQcd = " & Thread.getShareVar("RQcd")&Chr(10)& _
+					"errorcnt : " & errorcnt & " MAX: " & MAXerrorcnt , 1000, 300, 50
+        Delay 3000			
+					
+    Wend
+    
+	
+    //End If
+	
+End Sub
+
+Dim thread_MainmapCloseobv,thread_Mysobv,thread_MysRankobv
+
+Sub MainmapCloseobv
+    While 1
+        FindPic 13, 38, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, intX, intY
+        //FindPic 177, 662, 900, 1214, "Attachment:Unconnect.png", "000000", 0, 0.9, intX2, intY2
+        FindStr(547,910,666,960,"LINE","546586",0.7,intX2,intY2)
+        FindPic 26, 1012, 1053, 1886, "Attachment:LineconnectGreen.png", "000000", 0, 0.9, intX3, intY3
+        If intX > -1 or intX2 > -1 or intX3 > -1 Then 
+            Thread.SetShareVar "Funname", "MainmapCloseobv"
+            Exit While
+        End If
+               
+        If Thread.GetShareVar("Funname") = "Mysobv" Then 
+            Exit While
+        End If
+    Wend	
+End Sub
+
+Sub Mysobv
+    While 1
+        FindPic 27,115,1046,477,"Attachment:mysmode.png","000000",0,0.9,intX,intY
+        If intX > -1 and intY > -1 Then 
+            Thread.SetShareVar "Funname", "Mysobv"
+            Exit While
+        End If
+        
+        If Thread.GetShareVar("Funname") = "MainmapCloseobv" Then 
+            Exit While
+        End If
+    Wend
+End Sub
+
+While 1 //Locate at Main Map
+
+
+    Thread.SetShareVar "Funname", "Main"
+    	  	
+    If (requestcountdown <= 0) Then 
+        requestcountdown = MAXerrorcn + 400
+    End If
+    
+    
+    If (requestcountdown Mod 250)=0 Then 
+        givefireF = 1// 1 time
+        requestF = 1 // 1 time
+    End If
+    
+    If (requestcountdown Mod 100) = 0 Then 
+        mysF=1
+    End If
+		
+	
+    //error handle
+    FindPic 13, 38, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, intX, intY
+    FindPic 3, 960, 1078, 1911, "Attachment:closegame.png", "000000", 0, 0.7, intX2, intY2
+    FindPic 187, 677, 892, 1209, "Attachment:loginfail.png", "000000", 0, 0.9, intX3, intY3
+    FindPic 6, 1306, 1078, 1707, "Attachment:mysexit.png", "000000", 0, 0.8, intX4, intY4
+
+    If intX > -1 or intX2 > -1 or intX3 > -1 or intX4 > -1 Then 
+        TracePrint "CLOSE Window"
+        Thread.SetShareVar "FunMsg", "CLOSE Window"
+        If intX > -1 Then  
+            Tap intX + 10, intY + 10
+        End If
+        If intX2 > -1 Then
+            Tap intX2 + 10, intY2 + 10
+        End If
+        
+        If intX3 > -1 Then //loginfail
+            Tap GetScreenX()/2, intY3 + 400
+        End If
+        
+        If intX4 > -1 Then
+            Tap intX4 + 10, intY4 + 10
+        End If
+        	
+    End If
+	
+    
+    
+    If ReadUIConfig("RECONNECT") = True Then 
+        //reconnect1
+        //FindPic 177, 662, 900, 1214, "Attachment:Unconnect.png", "000000", 0, 0.9, intX, intY
+        FindStr(547,910,666,960,"LINE","546586",0.7,intX,intY)
+        If intX > -1 or intY > -1  Then 
+            //ShowMessage "Reconnect"
+            Thread.SetShareVar "FunMsg", "Reconnect"
+            Tap GetScreenX() / 2, intY + 400	
+        End If
+		
+        FindPic 26, 1012, 1053, 1886, "Attachment:LineStartGreen.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 or intY > -1  Then 
+            //ShowMessage "Reconnect"
+            Thread.SetShareVar "FunMsg", "Start connect"
+            Tap intX + 10, intY + 10	
+        End If
+	
+	
+	
+        //reconnect2
+        FindPic 26, 1012, 1053, 1886, "Attachment:LineconnectGreen.png", "000000", 0, 0.9, intX, intY
+        
+        If intX > -1 Then 
+        	
+            If FPwaitTap(26, 1012, 1053, 1886, "Attachment:LineconnectGreen.png", "000000", 0, 0.9, 10, 10) = True Then 
+                FPRecheckTap(26, 1012, 1053, 1886, "Attachment:LineconnectGreen.png", "000000", 0, 0.9, 10,10)
+                Lineconnect() 
+                closemysrank_F=1 
+            Else 
+                Thread.SetShareVar "FunMsg", "Unexpected error!!!"
+            End If
+        End If
+          		
+    End If	
+	
+
+    If ReadUIConfig("REQUESTFIRE") = True Then 
+	 
+        //request fire
+        FindPic 15, 19, 1072, 125, "Attachment:plusicon.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 And intY > -1 And (requestF > 0) Then 	
+            //ShowMessage "request fire"
+            Thread.SetShareVar "FunMsg", "request fire"
+            Tap intX+10, intY+10
+			
+            Delay 3000
+			
+            //FindPic 100, 403, 1001, 1568, "Attachment:needrequest.png", "000000", 0, 0.9, intX, intY
+            FindStr(156,933,920,1434,"request","FFFFFF-202020|FEFEFE-202020",0.7,intX,intY)
+            If intX > -1 And intY > -1 Then 
+                Tap intX + 10, intY + 10
+                If requestF > 0 Then 
+                    requestF=requestF-1	
+                End If
+                
+                Call rq_fireboxhandle() 
+            End if	
+	      	
+        End If
+	  
+    end if
+	
+	
+    If ReadUIConfig("GIVEFIRE") = True Then 
+        //give fire
+        FindPic 13, 1707, 1046, 1902, "Attachment:rankbox.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 And intY > -1 And givefireF > 0 Then 
+            //ShowMessage "Give fire"
+            Thread.SetShareVar "FunMsg", "Give fire"
+            FPRecheckTap(13, 1707, 1046, 1902, "Attachment:rankbox.png", "000000", 0, 0.9,10,10)
+            //Tap intX + 10, intY + 10
+            //Delay 3000
+            FPwaitTap(238, 248, 825, 368, "Attachment:ranktitle.png", "000000", 0, 0.9,10,10)	
+              
+            FindPic 99, 381, 973, 509, "Attachment:stagegreen.png", "000000", 0, 0.9, intX, intY
+            FindPic 99, 381, 973, 509, "Attachment:stageyellow.png", "000000", 0, 0.9, intX2, intY2
+            //find rank
+            If intX > -1 and intY > -1 Then 
+          
+                FPwaitTap(99, 381, 973, 509, "Attachment:stagegreen.png", "000000", 0, 0.9, 10, 10) 
+                FPRecheckTap (99, 381, 973, 509, "Attachment:stagegreen.png", "000000", 0, 0.9, 10, 10)
+            	  
+            ElseIf intX2 > -1 and intY2 > -1 Then
+            
+                FPwaitTap(99, 381, 973, 509, "Attachment:stageyellow.png", "000000", 0, 0.9, 10, 10) 
+                //FPRecheckTap (99, 381, 973, 509, "Attachment:stageyellow.png", "000000", 0, 0.9, 10, 10)
+            Else 
+            
+                Thread.SetShareVar "FunMsg", "Unexpeted error"		 		    	
+            End If
+            
+            If  Thread.getShareVar("FunMsg")<> "Unexpeted error" And _
+            	FPwaitTap(681, 508, 959, 1518, "Attachment:Me.png", "000000", 0, 0.9, 10, 10) = True Then 
+                FPRecheckTap (681, 508, 959, 1518, "Attachment:Me.png", "000000", 0, 0.9, 10, 10)
+					
+                If FPwaitTap(13, 354, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, 10, 10) = True Then 
+                    FPRecheckTap (13, 354, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, 10, 10)
+                    Call gv_fireboxhandle()
+                End If
+					 			
+            End If
+                      
+        End If
+                            
+    end if
+
+		
+    //Delay 3000
+	
+    //FindPic 15, 19, 1072, 125, "Attachment:plusicon.png", "000000", 0, 0.9, intX, intY
+    FindPic 22, 1548, 1049, 1895, "Attachment:bottomBox4.png", "000000", 0, 0.9, intX, intY 
+    If intX > -1 And intY > -1
+        
+        
+        If IsNotFullFire()=True Then 
+            //ShowMessage "No Full fire"
+            Thread.SetShareVar "FunMsg", "No Full fire"
+            If ReadUIConfig("GIFTGETFIRE") = True or ReadUIConfig("GIFTSENDFIREWATER")=True Then 
+             
+                FindPic 20, 1541, 363, 1904, "Attachment:bottomletterbox.png", "000000", 0, 0.9, intX, intY
+                If intX > -1 And intY > -1 Then 
+                    Tap intX + 10, intY + 10
+                    Call giftboxhandle()
+                End If
+				 
+            End If
+                 
+        Else 
+        
+            //ShowMessage "FullFire, go go‵",1000, (GetScreenX() / 2) - 100, GetScreenY() - 400
+            Thread.SetShareVar "FunMsg", "FullFire, go go‵"
+            //find bottom box4	
+            FindPic 22, 1548, 1049, 1895, "Attachment:bottomBox4.png", "000000", 0, 0.9, intX, intY
+            If intX > -1 And intY > -1 Then 
+                Tap intX + 10, intY + 10
+                
+                
+                 
+                If FPwaitTap(17, 321, 209, 873, "Attachment:Box4LArror.png", "000000", 0, 0.9, 10, 10) = True Then 
+                    //FPRecheckTap 17, 321, 209, 873, "Attachment:Box4LArror.png", "000000", 0, 0.9, 10, 10
+                	
+                	Delay 3000
+                	
+                	
+                    If FPwaitTap(/*66,1135,375,1561*/66+stagePosOffset,1135,375+stagePosOffset,1561, "Attachment:mission-stone.png", "000000", 0, 0.9, 10, 10) = True Then 
+                        FPRecheckTap /*66,1135,375,1561*/66+stagePosOffset,1135,375+stagePosOffset,1561, "Attachment:mission-stone.png", "000000", 0, 0.9, 10, 10
+                        
+                        /*FindPic 186,620,923,1455,"Attachment:OK.png","000000",0,0.9,intX,intY
+                        If intX > -1 And intY > -1 Then 
+                            FPRecheckTap 186,620,923,1455,"Attachment:OK.png", "000000", 0, 0.9, 10, 10	     	                       	
+                        End If*/
+                                           
+                        Call missionstart()
+                    End If
+  	
+                End If        	
+            Else
+                Thread.SetShareVar "FunMsg", "bottomBox4.png is not found"	
+            End If    	
+			
+        End If
+	
+    Else //Other ..  
+        
+        Thread.SetShareVar "FunMsg", "Other screen"
+    End If
+    
+    
+    FindPic 14, 121, 326, 757, "Attachment:mysmission.png", "000000", 0, 0.7, intX, intY
+    If intX > -1 And intY > -1 And (mysF = 1) Then 
+    	
+        If FPwaitTap(14, 121, 326, 757, "Attachment:mysmission.png", "000000", 0, 0.7, 10, 10) = True Then 
+            FPRecheckTap(14, 121, 326, 757, "Attachment:mysmission.png", "000000", 0, 0.7,10,10)
+    
+            //ShowMessage "mysterious mode"
+            Thread.SetShareVar "FunMsg", "mysterious mode"
+        
+            thread_MainmapCloseobv = Thread.Start( MainmapCloseobv)
+            thread_Mysobv = Thread.Start(Mysobv)
+            //If closemysrank_F = 1 Then 
+            //thread_MysRankobv = Thread.Start(MysRankobv)	
+            //End If
+            
+            
+           
+            Thread.SetShareVar "FunMsg", "wait reaction.."
+            Thread.Wait(thread_MainmapCloseobv)    
+            //If closemysrank_F = 1 Then 
+            //Thread.Wait (thread_MysRankobv)	
+            //End If
+            
+            Thread.Wait(thread_Mysobv)
+        	
+            If Thread.GetShareVar("Funname") = "MainmapCloseobv" Then          
+            ElseIf Thread.GetShareVar("Funname") = "Mysobv" and (closemysrank_F = 1) Then
+                closemysrank_F = 0
+              
+            ElseIf Thread.GetShareVar("Funname") = "Mysobv" and (closemysrank_F = 0)Then
+            	
+                If mysgo() = True Then 
+                    Call missionstart()
+                    Call mysexit()	
+                End If
+
+            	
+                If myserrorF >= 1 Then 
+                    ShowMessage "mysterious mode error",3000
+                Else 
+                    mysF = 0
+                End If
+		 
+                myserrorF = 0
+            	
+            Else 
+                
+                Thread.SetShareVar "FunMsg", "Unexpected error!! "
+                      
+                           
+            End If
+            	
+            
+            
+            //Thread.Stop (thread_MainmapCloseobv)
+            //Thread.Stop (thread_Mysobv)
+            //Thread.Stop (thread_MysRankobv)
+            Thread.SetShareVar "Funname", "Main"
+        End If
+        	
+    End If	
+    
+    
+    
+    
+   
+    requestcountdown = requestcountdown - 1
+    Thread.SetShareVar "RQcd", requestcountdown
+Wend
+
+
+Function mysgo
+    Thread.SetShareVar "Funname", "mysgo"
+    
+    If FPwaitTap (32,1311,1048,1709,"Attachment:mysgo.png","000000",0,0.9,10,10)=False OR _
+    	FPRecheckTap(32, 1311, 1048, 1709, "Attachment:mysgo.png", "000000", 0, 0.9, 10, 10)=False Then
+    	
+        
+        myserrorF = myserrorF + 1
+        mysgo = False
+    Else 
+        mysgo = True
+    End If
+    		
+    
+    Thread.SetShareVar "FunMsg", "mysgo end" 
+    
+End Function
+
+Sub mysexit
+
+    Thread.SetShareVar "Funname", "mysexit"
+    
+    If  FPwaitTap ( 6, 1306, 1078, 1707, "Attachment:mysexit.png", "000000", 0, 0.8,10,10)=False OR _
+    	FPRecheckTap ( 6, 1306, 1078, 1707, "Attachment:mysexit.png", "000000", 0, 0.8, 10, 10)=False Then
+    
+        myserrorF=myserrorF+1	
+    End If
+    
+    Thread.SetShareVar "FunMsg", "mysexit end"
+End Sub
+
+Dim input_text
+Sub Lineconnect
+    Thread.SetShareVar "Funname", "Lineconnect"
+    Thread.SetShareVar "MAXWhilecnt", MAXerrorcn
+    whilerrorcnt = 0
+	
+    While 1
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+
+        FindPic 2,1807,1078,1915,"Attachment:allow.png","000000",0,0.9,intX,intY
+        If intX > -1 And intY > -1 Then 
+            //ShowMessage "Allow button click"
+            Thread.SetShareVar "FunMsg", "Allow button click"
+            Tap intX+10, intY+10	
+        End If
+	
+        //fill email/password
+        FindPic 15, 18, 1055, 802, "Attachment:loginGray.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 And intY > -1 Then 
+            //ShowMessage "Login gray button"
+            Thread.SetShareVar "FunMsg", "Login gray button"
+            Tap GetScreenX() / 2, intY - 170
+            Delay 3000
+    
+    
+            input_text = ReadUIConfig("Lineinputname")
+            InputText input_text//"spiderman740222@gmail.com"
+            Delay 1000
+	   
+            Tap GetScreenX() / 2, intY - 70
+            Delay 3000
+            input_text = ReadUIConfig("Lineinputpassword")
+            InputText input_text // "f119852223"
+        End If
+	
+	
+        FindPic 15, 18, 1055, 802, "Attachment:loginGreen.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 And intY > -1 Then 
+            //ShowMessage "Login green button click"
+            Thread.SetShareVar "FunMsg", "Login green button click"
+            Tap intX+10, intY+10				
+	
+            Delay 3000
+            Tap 812,1868 //肮砩漃
+	
+            Goto LineConnectEND		
+        End If
+	
+        If whilerrorcnt > MAXerrorcn Then  
+            Goto LineConnectEND
+        End If
+	
+    Wend
+
+    Rem LineConnectEND
+    
+   
+    Thread.SetShareVar "FunMsg", "None"				
+End Sub
+
+
+Sub gv_fireboxhandle
+    Thread.SetShareVar "Funname", "gv_fireboxhandle"
+    Thread.SetShareVar "MAXWhilecnt", gvf_counterMax
+    //ShowMessage "Give fire box open"
+    Thread.SetShareVar "FunMsg", "Give fire box open"
+    whilerrorcnt = 0
+    While 1
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+		
+        While 1
+			
+            FindPic GetScreenX()/2, 507, 971, 1539, "Attachment:givefire.png", "000000", 0, 0.8, intX, intY
+            If intX > -1 Then 
+                Thread.SetShareVar "FunMsg", "Give fire ..."
+                FPRecheckTap(GetScreenX() / 2, 507, 971, 1539, "Attachment:givefire.png", "000000", 0, 0.8, 10, 10)
+				
+                If FPwaitTap(188, 681, 895, 1207, "Attachment:givefire2.png", "000000", 0, 0.7, 66, 500) = True Then 
+                    FPRecheckTap(188, 681, 895, 1207, "Attachment:givefire2.png", "000000", 0, 0.7,66,500)	
+                End If
+            Else 
+                Exit While
+            End If
+			
+        Wend	   
+        
+        If ff = 1 Then 
+        	Swipe GetScreenX() / 2, GetScreenY() / 2, GetScreenX() / 2, GetScreenY() / 2 + 100
+            
+            //find fire to top,Until reach "1st" and not send fire for while
+            //FindPic 101,451,974,1292,"Attachment:rank1.png","000000",0,0.9,intX,intY
+            //FindPic 69, 220, 1001, 781, "Attachment:empty.png", "000000", 0, 0.9, intX, intY
+            FindPic 73,466,1002,692, "Attachment:empty.png", "000000", 0, 0.8, intX, intY            
+            If intX > -1 And intY > -1 Then 
+                //ShowMessage "Forward to top END"
+                Thread.SetShareVar "FunMsg", "Forward to top END"
+				
+                ff = 2
+                Exit While
+            End If
+        
+            
+            //Delay 1000
+        ElseIf ff = 2 Then
+        
+            //find fire to bottom
+            //FindStr(422,1176,827,1575,NumberStr,"244093-101010|254194-101010",0.9,intX,intY)
+            FindPic 71,1213,1002,1569,"Attachment:empty.png","000000",0,0.9,intX,intY
+            If intX > -1 And intY > -1 Then 
+                //ShowMessage "Forward to bottom END"
+                Thread.SetShareVar "FunMsg", "Forward to bottom END"
+                ff = 1
+                	
+                If givefireF > 0 Then 
+                    givefireF=givefireF - 1
+                End If
+            	
+                Exit While	
+                	
+                
+				/*
+				//Delay 1000
+				Else // ff=0
+				//ShowMessage "Give fire box close"
+				Thread.SetShareVar "FunMsg", "Give fire box close"
+				ff = 1
+				
+				If givefireF > 0 Then 
+				givefireF=givefireF - 1
+				End If
+				
+				Exit While
+				*/
+            End If
+            Swipe GetScreenX() / 2, GetScreenY() / 2, GetScreenX() / 2, GetScreenY() / 2 - 100
+        End If
+        
+                
+        If whilerrorcnt > gvf_counterMax Then
+            Thread.SetShareVar "FunMsg", "Give time reach MAX.."
+            Exit While
+        End If
+        
+    Wend
+	 
+    
+    Thread.SetShareVar "FunMsg", "None"
+	
+End Sub
+
+
+Sub rq_fireboxhandle
+    Thread.SetShareVar "Funname", "rq_fireboxhandle"
+    Thread.SetShareVar "MAXWhilecnt", rqf_counterMax
+    //ShowMessage "Fire request box open"
+    Thread.SetShareVar "FunMsg", "Fire request box open"
+    whilerrorcnt = 0
+    
+    While 1
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+
+
+        FindPic 69,1003,1005,1488,"Attachment:empty.png","000000",0,0.9,intX,intY
+        If intX > -1 And intY > -1 Then 
+            //ShowMessage "END request"
+            Thread.SetShareVar "FunMsg", "END request"
+            FindPic 13, 38, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, intX, intY
+            If intX > -1 And intY > -1 Then 
+ 			
+                //ShowMessage "END request OK"
+                Thread.SetShareVar "FunMsg", "END request OK"
+                Tap intX + 10, intY + 10
+ 			
+                Exit While
+            End If
+ 		
+        End If
+
+        
+        Do
+        	  
+            FindPic 99, 453, 998, 1590, "Attachment:requestGreen.png", "000000", 0, 0.9, intX, intY
+            If intX > -1 And intY > -1 Then 
+                //ShowMessage "request fire"
+                Thread.SetShareVar "FunMsg", "request fire"
+                Tap intX+10 , intY+10
+            End If
+            
+        Loop Until (intX <= -1 or intY <= -1)
+        
+        If whilerrorcnt > 2 Then // for first item issue..
+        	Swipe GetScreenX() / 2, GetScreenY() / 2, GetScreenX() / 2, GetScreenY() / 2 - 100	
+        End If
+        
+        
+	
+        If whilerrorcnt > rqf_counterMax Then 
+            Thread.SetShareVar "FunMsg", "Request time reach MAX.."
+            Exit While
+        End If
+        
+    Wend    
+   
+    Thread.SetShareVar "FunMsg", "None"		
+End Sub
+
+
+Sub giftboxhandle
+
+    Thread.SetShareVar "Funname", "giftboxhandle"
+    Thread.SetShareVar "MAXWhilecnt",Cint(ReadUIConfig("giftboxmax"))
+    //ShowMessage "Giftbox open"
+    Thread.SetShareVar "FunMsg", "Giftbox open"
+    giftboxcnt = 0
+
+    While 1
+        If ReadUIConfig("GIFTGETFIRE") = True Then 
+        	
+        	
+            While 1
+                FindPic 73,461,997,1395, "Attachment:firerecieve.png", "000000", 0, 0.7, intX, intY
+                If intX > -1 And intY > -1 Then 
+                    //ShowMessage "Recieve fire"
+                    Thread.SetShareVar "FunMsg", "Recieve fire"
+                    Tap intX + 600, intY+10
+                    //Delay 5000
+                    
+            	    /*
+                    FindPic 57,1087,1060,1658,"Attachment:OKtosend.png","000000",0,0.9,intX,intY
+                    If intX > -1 And intY > -1 Then 
+                        If FPwaitTap(57, 1087, 1060, 1658, "Attachment:OKtosend.png", "000000", 0, 0.9, 150, 10) = True Then 
+                            FPRecheckTap(57,1087,1060,1658,"Attachment:OKtosend.png","000000",0,0.9, 150,10)	
+                        End If
+                        
+            	    
+                        //Tap intX + 150, intY+10
+                    End If
+                    */
+
+                    
+                Else 
+                    Thread.SetShareVar "FunMsg", "None fire"
+                    Exit While
+                End If	
+            Wend	
+  	
+        End If
+		
+        If ReadUIConfig("GIFTSENDFIREWATER") = True Then 
+		
+            Do
+		
+                FindPic 73, 461, 997, 1395, "Attachment:firesend.png", "000000", 0, 0.8, intX, intY
+                FindPic 73, 461, 997, 1395, "Attachment:keywater.png", "000000", 0, 0.8, intX2, intY2
+                FindPic 73, 461, 997, 1395, "Attachment:keywater2.png", "000000", 0, 0.8, intX3, intY3
+        	
+                If intX > -1 And intY > -1 Then 
+                    //ShowMessage "Send fire"
+                    Thread.SetShareVar "FunMsg", "Send fire"
+                    //Tap intX + 600, intY + 10
+                
+                    If FPwaitTap(73, 461, 997, 1395, "Attachment:firesend.png", "000000", 0, 0.8, 600, 10) = True Then 
+                        FPRecheckTap(73, 461, 997, 1395, "Attachment:firesend.png", "000000", 0, 0.8, 600,10)	
+                    End If
+                    
+                End If
+                If intX2 > -1 And intY2 > -1 Then 
+                    //ShowMessage "Send KeyWater"
+                    Thread.SetShareVar "FunMsg", "Send KeyWater"
+                    //Tap intX2 + 600, intY2 + 10
+                    If FPwaitTap(73, 461, 997, 1395, "Attachment:keywater.png", "000000", 0, 0.8, 600, 10) = True Then 
+                        FPRecheckTap(773, 461, 997, 1395, "Attachment:keywater.png", "000000", 0, 0.8, 600,10)	
+                    End If
+                    
+                
+                End If
+                If intX3 > -1 And intY3 > -1 Then 
+                    //ShowMessage "Send KeyWater2"
+                    Thread.SetShareVar "FunMsg", "Send KeyWater2"
+                    //Tap intX3 + 600, intY3 + 10            	
+                    //Delay 5000 
+                    
+                    If FPwaitTap(73, 461, 997, 1395, "Attachment:keywater2.png", "000000", 0, 0.8, 600, 10) = True Then 
+                        FPRecheckTap(773, 461, 997, 1395, "Attachment:keywater2.png", "000000", 0, 0.8, 600,10)	
+                    End If
+            		
+                    If FPwaitTap(66, 412, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8, 10, 10) = True Then 
+                        FPRecheckTap(66, 412, 1067, GetScreenY() / 2, "Attachment:missionclose.png", "000000", 0, 0.8,10,10)
+                    End If
+                    
+ 
+
+                End If
+            Loop Until (intX <=-1 and intX2 <=-1 and intX3 <=-1)  
+            
+		 
+        End If
+		
+		
+        FindPic 186,620,923,1455,"Attachment:OK.png","000000",0,0.9,intX,intY
+        If intX > -1 And intY > -1 Then 
+            FPRecheckTap 186,620,923,1455,"Attachment:OK.png", "000000", 0, 0.9, 10, 10	     	                       	
+        End If
+		
+	
+        //FindPic 69, 680, 1004, 1506, "Attachment:endline.png", "000000", 0, 0.9, intX, intY
+        FindPic 71,1213,1002,1569,"Attachment:empty.png","000000",0,0.9,intX,intY
+        If intX > -1 And intY > -1 Then 
+            //ShowMessage "Reach Box bottom~ Leave"
+            Thread.SetShareVar "FunMsg", "Reach Box bottom~ Leave"
+            //Tap 964, 415
+            Exit While
+        End If
+	
+        If giftboxcnt >  Cint(ReadUIConfig("giftboxmax")) Then 
+            //ShowMessage "giftbox error , leave box!"
+            Thread.SetShareVar "FunMsg", "GiftBox error/full of " & ReadUIConfig("giftboxmax")
+            TracePrint  "GiftBox error/full of " & ReadUIConfig("giftboxmax")
+            Exit While	
+        End If
+	
+        Swipe GetScreenX() / 2, GetScreenY() / 2, GetScreenX() / 2, GetScreenY() / 2 - 70
+        giftboxcnt = giftboxcnt + 1
+        Thread.SetShareVar "Whilecnt", giftboxcnt
+        Thread.SetShareVar "MAXWhilecnt",  Cint(ReadUIConfig("giftboxmax"))	
+        //Delay 1000
+ 
+    Wend
+	
+    Rem CloseGiftBox
+    Thread.SetShareVar "FunMsg", "None"
+End Sub
+//----framework--------------------------------------------------------------------//
+Dim FPintx,FPinty
+//ensure the pic to tap success  
+Function FPRecheckTap(x1,y1,x2,y2,pic,sidecolor,findtype,acc,tapshiftx,tapshifty)
+    Thread.SetShareVar "FunMsg", "rechecking..."
+    Thread.SetShareVar "MAXWhilecnt",MAXerrorcn
+    whilerrorcnt = 0
+    Do
+        Delay 1000
+    	
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt", whilerrorcnt
+    	
+        FindPic x1, y1, x2, y2, pic, sidecolor, findtype, acc, intX, intY
+        FPintx = intX
+        FPinty = intY
+        If (FPintx > -1) Then 
+            tap FPintx + tapshiftx, FPinty + tapshifty
+        End If
+        
+        If whilerrorcnt > MAXerrorcn  Then  
+            Thread.SetShareVar "FunMsg", "FPRecheckTap error"
+            whilerrorcnt = 0
+            Thread.SetShareVar "Whilecnt", whilerrorcnt
+            FPRecheckTap=False
+            Exit Function	
+        End If
+        
+        
+        
+    Loop Until (FPintx <= -1)
+    
+    FPRecheckTap=True
+    
+    
+    Thread.SetShareVar "FunMsg", "Tap success"	
+End Function
+
+//wait pic to tap  
+Function FPwaitTap(x1,y1,x2,y2,pic,sidecolor,findtype,acc,tapshiftx,tapshifty)
+    Thread.SetShareVar "FunMsg", "waitting to tap ..."
+    Thread.SetShareVar "MAXWhilecnt",MAXerrorcn
+    whilerrorcnt = 0
+	
+    Do
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt", whilerrorcnt
+    	
+        FindPic x1, y1, x2, y2, pic, sidecolor, findtype, acc, intX, intY
+        FPintx = intX
+        FPinty = intY
+        If (FPintx > -1) Then 
+            tap FPintx + tapshiftx, FPinty + tapshifty
+            Exit Do
+        End If
+		
+        If whilerrorcnt > MAXerrorcn  Then  
+            Thread.SetShareVar "FunMsg", "FPwaitTap error"
+            whilerrorcnt = 0
+            Thread.SetShareVar "Whilecnt", whilerrorcnt
+            FPwaitTap=False
+            Exit Function	
+        End If 		
+		 		 
+    Loop while (FPintx <= -1)
+	
+    FPwaitTap=True
+    
+    Thread.SetShareVar "FunMsg", "Tap success"
+End Function
+
+
+Function IsNotFullFire
+
+	
+
+    FindStr 96, 40, 265, 113, "full", "FAF9F9-101010|DCDAD7-101010", 0.7, intX, intY
+    FindPic 10, 23, 329, 125, "Attachment:unlimit_redfire.png", "000000", 0, 0.9, intX2, intY2
+    FindPic 10,23,327,121,"Attachment:unlimitfire.png","000000",0,0.9,intX3,intY3
+    If intX > -1 or intX2 > -1 or intX3 > -1 Then 
+        IsNotFullFire = False
+    Else 
+        IsNotFullFire=True
+    End If
+    
+End Function
+//----framework--------------------------------------------------------------------//
+Dim missionstart_cnt
+//Repeat goon until no fire
+Sub missionstart 
+    Thread.SetShareVar "Funname", "missionstart"
+    Thread.SetShareVar "MAXWhilecnt", MAXerrorcn
+    
+    missionstart_cnt = 0
+    //Thread.SetShareVar "Whilecnt",missionstart_cnt
+    //whilerrorcnt = 0
+    //wait screen ready
+/*    While 1
+
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+    
+        FindPic 15, 19, 1072, 125, "Attachment:plusicon.png", "000000", 0, 0.9, intX, intY
+        If intX > -1 And intY > -1 or whilerrorcnt > MAXerrorcn Then 	
+            Goto ZeroFireCheck
+        End If
+    Wend
+
+    Rem ZeroFireCheck*/
+    whilerrorcnt = 0
+    //Thread.SetShareVar "Whilecnt",whilerrorcnt
+
+    While 1
+        missionstart_cnt = missionstart_cnt + 1
+        Thread.SetShareVar "Whilecnt",missionstart_cnt
+  	
+        //wait screen ready
+        
+        While 1
+            whilerrorcnt = whilerrorcnt + 1
+            Thread.SetShareVar "Whilecnt",whilerrorcnt
+    
+            FindPic 15, 19, 1072, 125, "Attachment:plusicon.png", "000000", 0, 0.9, intX, intY
+            If intX > -1 And intY > -1 or whilerrorcnt > MAXerrorcn Then               		
+                Exit While
+            End If
+        Wend
+  
+  
+        If IsNotFullFire()=True Then
+	
+            If FPwaitTap(755, 206, 1074, 517, "Attachment:missionclose.png", "000000", 0, 0.7, 10, 10) = True Then 
+                FPRecheckTap (755, 206, 1074, 517, "Attachment:missionclose.png", "000000", 0, 0.7,10,10)
+                Thread.SetShareVar "FunMsg", "LeaveMission"
+            End If
+			
+            Exit While
+ 	
+        Else 
+	     
+            If FPwaitTap(51, 1337, 1037, 1708, "Attachment:missionstart.png", "000000", 0, 0.7, 10, 10) = True Then 
+                FPRecheckTap (51, 1337, 1037, 1708, "Attachment:missionstart.png", "000000", 0, 0.7, 10, 10)
+                Call AIgothroughtgame()
+                Call retry()	
+            End If
+
+            	
+        End If
+	
+        If missionstart_cnt > MAXerrorcn Then 
+            Exit While		
+        End If
+    Wend
+    
+    Thread.SetShareVar "FunMsg", "None"
+    //ShowMessage "To main screen"
+End Sub
+
+
+
+Sub AIgothroughtgame
+   
+    Thread.SetShareVar "MAXWhilecnt",MAXerrorcn + 400
+    whilerrorcnt = 0
+	
+    While 1
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+        //ShowMessage "gothroughtgame ..."
+        Thread.SetShareVar "FunMsg", "gothroughtgame ..."
+        
+        
+        FindColor 445, 1309, 727, 1672, "FFFFFF", 2, 0.9, intX, intY
+        If intX > -1 And intY > -1 Then 
+        	Call shootball()	
+        Else 
+            Tap GetScreenX() / 2, GetScreenY() / 2 
+        End If
+	
+		
+        FindPic 66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8, intX, intY
+        If intX > -1 And intY > -1 Then 
+        	
+            If FPwaitTap(66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8, 10, 10) = True Then 
+                FPRecheckTap (66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8,10,10)
+                Exit While        	
+            End If
+		
+        End If
+	
+        If whilerrorcnt > MAXerrorcn + 400 Then 
+        	
+            Thread.SetShareVar "FunMsg", "gothroughtgame error"
+            Exit Sub	
+        End If
+    Wend
+    	  
+    Thread.SetShareVar "FunMsg", "None"
+End Sub
+
+Dim pigball,whiteball,blueball,yellowball,greenball ,errorball
+pigball = 1
+whiteball = 2
+blueball = 3
+yellowball = 4
+greenball = 5
+errorball = 0
+
+
+Sub shootball
+    If findnowtball() = pigball Then 
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:pigball.png", "000000", 2, 0.9, intX, intY
+        	
+    ElseIf findnowtball() = whiteball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:whiteball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnowtball() = blueball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:blueball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnowtball() = yellowball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:yellowball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnowtball() = greenball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:greenball.png", "000000", 2, 0.9, intX, intY
+        
+    
+    ElseIf findnextball() = pigball Then		
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:pigball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnextball() = whiteball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:whiteball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnextball() = blueball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:blueball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnextball() = yellowball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:yellowball.png", "000000", 2, 0.9, intX, intY
+        
+    ElseIf findnextball() = greenball Then
+        FindPic 1, (GetScreenY() / 2) - 120, 1079, GetScreenY() / 2, "Attachment:greenball.png", "000000", 2, 0.9, intX, intY
+    Else 
+    	ShowMessage"errorball" 
+    	
+    End If
+	
+	
+    If intX <= -1 or intY <= -1 Then 
+        Tap GetScreenX() / 2, GetScreenY() / 2
+    Else 
+        Tap intX+10,intY+10
+    End If	
+	
+End Sub
+
+
+
+Function findnextball
+    FindPic 25,1312,323,1667,"Attachment:pigball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        Tap intX+10,intY+10
+        findnextball = pigball
+        Exit Function
+    End if
+		
+    FindPic 25,1312,323,1667,"Attachment:whiteball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        Tap intX+10,intY+10
+        findnextball = whiteball
+        Exit Function
+    End if
+	
+    FindPic 25,1312,323,1667,"Attachment:blueball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        Tap intX+10,intY+10
+        findnextball = blueball
+        Exit Function
+    End If
+		
+    FindPic 25,1312,323,1667,"Attachment:yellowball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        Tap intX+10,intY+10
+        findnextball = yellowball
+        Exit Function
+    End If
+		
+    FindPic 25,1312,323,1667,"Attachment:greenball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        Tap intX+10,intY+10
+        findnextball = greenball
+        Exit Function
+    End If
+		
+		
+    findnextball=errorball
+End Function
+
+Function findnowtball
+    FindPic 445,1309,727,1672,"Attachment:pigball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        findnowtball = pigball
+        Exit Function
+    End if
+		
+    FindPic 445,1309,727,1672,"Attachment:whiteball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        findnowtball = whiteball
+        Exit Function
+    End if
+	
+    FindPic 445,1309,727,1672,"Attachment:blueball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        findnowtball = blueball
+        Exit Function
+    End If
+		
+    FindPic 445,1309,727,1672,"Attachment:yellowball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        findnowtball = yellowball
+        Exit Function
+    End If
+		
+    FindPic 445,1309,727,1672,"Attachment:greenball.png","000000",2,0.9,intX,intY
+    If intX > -1 And intY > -1 Then 
+        findnowtball = greenball
+        Exit Function
+    End If
+		
+		
+    findnowtball=errorball
+End Function
+
+Sub gothroughtgame //keep tap Until closegame button apear
+    //Thread.SetShareVar "Funname", "gothroughtgame"
+    Thread.SetShareVar "MAXWhilecnt",MAXerrorcn + 400
+    whilerrorcnt = 0
+	
+    While 1
+        whilerrorcnt = whilerrorcnt + 1
+        Thread.SetShareVar "Whilecnt",whilerrorcnt
+        //ShowMessage "gothroughtgame ..."
+        Thread.SetShareVar "FunMsg", "gothroughtgame ..."
+        Tap GetScreenX() / 2, GetScreenY() / 2 
+		
+		
+        FindPic 66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8, intX, intY
+        If intX > -1 And intY > -1 Then 
+        	
+            If FPwaitTap(66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8, 10, 10) = True Then 
+                FPRecheckTap (66, 1196, 1022, 1661, "Attachment:closegame.png", "000000", 0, 0.8,10,10)
+                Exit While        	
+            End If
+		
+        End If
+	
+        If whilerrorcnt > MAXerrorcn + 400 Then 
+        	
+            Thread.SetShareVar "FunMsg", "gothroughtgame error"
+            Exit Sub	
+        End If
+    Wend
+    	  
+    Thread.SetShareVar "FunMsg", "None"
+End Sub
+
+
+Sub retry //keep press retry button Until success
+    //Thread.SetShareVar "Funname", "retry"
+    
+    If FPwaitTap(218, 1134, 846, 1559, "Attachment:retrygame.png", "000000", 0, 0.9, 10, 10) = True Then 
+        FPRecheckTap (218, 1134, 846, 1559, "Attachment:retrygame.png", "000000", 0, 0.9,10,10)	
+    End If
+    
+    Thread.SetShareVar "FunMsg", "None"
+    
+    
+End Sub
